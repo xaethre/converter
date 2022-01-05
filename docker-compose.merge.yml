@@ -1,0 +1,61 @@
+networks:
+  myNetwork:
+    driver: bridge
+services:
+  api:
+    build:
+      context: /home/rijndael/docker/docker-demo-1
+      dockerfile: ./apps/api/Dockerfile
+    container_name: api
+    depends_on:
+      rmq:
+        condition: service_started
+    environment:
+      NAME: myapi
+    networks:
+      myNetwork: {}
+    ports:
+    - published: 3002
+      target: 3000
+    restart: always
+    volumes:
+    - /home/rijndael/docker/docker-demo-1/.env:/opt/app/.env:rw
+  app:
+    build:
+      context: /home/rijndael/docker/docker-demo-1
+      dockerfile: ./apps/app/Dockerfile
+    container_name: app
+    networks:
+      myNetwork: {}
+    ports:
+    - published: 3001
+      target: 80
+    restart: always
+  converter:
+    build:
+      context: /home/rijndael/docker/docker-demo-1
+      dockerfile: ./apps/converter/Dockerfile
+    container_name: converter
+    depends_on:
+      rmq:
+        condition: service_started
+    networks:
+      myNetwork: {}
+    restart: always
+    volumes:
+    - /home/rijndael/docker/docker-demo-1/.env:/opt/app/.env:rw
+  rmq:
+    container_name: rmq
+    environment:
+      NAME: myapi
+      RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_USER: admin
+    image: rabbitmq:3-management
+    networks:
+      myNetwork: {}
+    ports:
+    - published: 15672
+      target: 15672
+    restart: always
+version: '3'
+
